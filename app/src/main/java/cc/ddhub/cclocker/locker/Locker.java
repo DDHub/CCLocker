@@ -1,6 +1,7 @@
 package cc.ddhub.cclocker.locker;
 
 /**
+ * Locker
  * Created by denzelw on 16/7/27.
  */
 public class Locker {
