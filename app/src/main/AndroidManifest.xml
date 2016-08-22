@@ -26,6 +26,13 @@
         </receiver>
         <service android:name=".locker.LiveService"
             android:process=":lock"/>
+        <service android:name=".smart.SmartService"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data android:name="android.accessibilityservice" android:resource="@xml/smart_service_meta_data" />
+        </service>
     </application>
 
 </manifest>

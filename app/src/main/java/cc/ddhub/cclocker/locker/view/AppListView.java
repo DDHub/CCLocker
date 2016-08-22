@@ -68,7 +68,7 @@ public class AppListView extends RecyclerView implements AppListPresenter.IView 
             int p = index - first;
             if (p >= 0 && p < getChildCount()) {
                 AppItemHolder holder = (AppItemHolder) getChildViewHolder(getChildAt(p));
-                holder.process(itemInfo.getProcess());
+                holder.change(itemInfo);
             }
             mAdapter.change(index, itemInfo);
         }

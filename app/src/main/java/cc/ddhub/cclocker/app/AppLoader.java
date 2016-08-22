@@ -17,10 +17,16 @@ public class AppLoader {
     public static class AppInfo {
         String name;
         Drawable icon;
+        String pkg;
 
-        public AppInfo(String name, Drawable icon) {
+        public AppInfo(String pkg, String name, Drawable icon) {
+            this.pkg = pkg;
             this.name = name;
             this.icon = icon;
+        }
+
+        public String getPkg() {
+            return pkg;
         }
 
         public String getName() {
@@ -33,9 +39,10 @@ public class AppLoader {
 
         @Override
         public boolean equals(Object o) {
-            return !(o == null || !(o instanceof AppInfo))
-                    && (super.equals(o)
-                        || (TextUtils.equals(this.name, ((AppInfo) o).name) && this.icon == ((AppInfo) o).icon));
+            if (o != null && o instanceof AppInfo) {
+                return this == o || TextUtils.equals(pkg, ((AppInfo) o).getPkg());
+            }
+            return super.equals(o);
         }
     }
 
@@ -51,7 +58,7 @@ public class AppLoader {
             if (!isSystem) {
                 CharSequence sequence = info.loadLabel(packageManager);
                 if(!TextUtils.isEmpty(sequence)) {
-                    infoList.add(new AppInfo(sequence.toString(), info.loadIcon(packageManager)));
+                    infoList.add(new AppInfo(info.packageName, sequence.toString(), info.loadIcon(packageManager)));
                 }
             }
         }
