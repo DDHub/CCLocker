@@ -10,14 +10,13 @@ import java.util.List;
 
 import cc.ddhub.cclocker.LockerApp;
 import cc.ddhub.cclocker.app.AppLoader;
+import cc.ddhub.cclocker.smart.SmartTask;
 import cc.ddhub.cclocker.smart.action.ActionResult;
 import cc.ddhub.cclocker.smart.action.ClickAction;
 import cc.ddhub.cclocker.smart.action.FindAction;
 import cc.ddhub.cclocker.smart.action.IAction;
 import cc.ddhub.cclocker.smart.action.IActionCallBack;
 import cc.ddhub.cclocker.smart.action.IntentAction;
-import cc.ddhub.cclocker.smart.SmartTask;
-import cc.ddhub.cclocker.smart.SmartTaskExecutor;
 import cc.ddhub.cclocker.smart.action.WaitingAction;
 import cc.ddhub.cclocker.util.L;
 
@@ -127,7 +126,7 @@ public class AppListPresenter {
                 intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 SmartTask task = new SmartTask();
                 task.addAction(new IntentAction(LockerApp.getApp(), intent));
-                new SmartTaskExecutor().executeTask(task);
+                task.execute();
                 b = true;
             } else {
                 Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
@@ -136,8 +135,8 @@ public class AppListPresenter {
 
                 SmartTask task = new SmartTask();
                 task.addAction(new IntentAction(LockerApp.getApp(), intent));
-                task.addAction(new WaitingAction(300));
                 task.addAction(new FindAction("强行停止").root());
+                task.addAction(new WaitingAction(2300));
                 task.addAction(new ClickAction());
                 final int size = task.actionSize();
                 task.setCallBack(new IActionCallBack() {
@@ -151,7 +150,7 @@ public class AppListPresenter {
                     }
 
                     @Override
-                    public void onExecuteDone(ActionResult result, IAction action) {
+                    public void onExecuteDone(IAction action, ActionResult result) {
                         L.d("wrw", "start app settings page " + isSucceed);
                         count++;
                         this.isSucceed = result.result();
@@ -168,7 +167,7 @@ public class AppListPresenter {
                         L.d("wrw", "action cancel " + action);
                     }
                 });
-                new SmartTaskExecutor().executeTask(task);
+                task.execute();
             }
         }
     }

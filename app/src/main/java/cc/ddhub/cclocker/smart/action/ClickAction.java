@@ -5,12 +5,13 @@ import android.view.accessibility.AccessibilityNodeInfo;
 /**
  * Created by denzelw on 16/8/10.
  */
-public class ClickAction implements IAction, INodeHandler {
+public class ClickAction implements IAction {
     protected AccessibilityNodeInfo mNode;
 
     @Override
-    public void setNode(AccessibilityNodeInfo node) {
+    public boolean setNode(AccessibilityNodeInfo node) {
         mNode = node;
+        return true;
     }
 
     @Override

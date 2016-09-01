@@ -14,10 +14,10 @@ public interface IActionCallBack {
 
     /**
      *
-     * @param result
      * @param action
+     * @param result
      */
-    void onExecuteDone(ActionResult result, IAction action);
+    void onExecuteDone(IAction action, ActionResult result);
 
     void onExecuteCancel(IAction action);
 

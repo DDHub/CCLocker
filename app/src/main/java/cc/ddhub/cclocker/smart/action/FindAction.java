@@ -10,7 +10,7 @@ import cc.ddhub.cclocker.smart.SmartHolder;
 /**
  * Created by denzelw on 16/8/10.
  */
-public class FindAction implements IAction, INodeHandler {
+public class FindAction implements IAction {
     private String mText;
     private AccessibilityNodeInfo mNode;
 
@@ -24,8 +24,9 @@ public class FindAction implements IAction, INodeHandler {
     }
 
     @Override
-    public void setNode(AccessibilityNodeInfo node) {
+    public boolean setNode(AccessibilityNodeInfo node) {
         mNode = node;
+        return true;
     }
 
     @Override

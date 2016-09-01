@@ -2,6 +2,7 @@ package cc.ddhub.cclocker.smart.action;
 
 import android.content.Context;
 import android.content.Intent;
+import android.view.accessibility.AccessibilityNodeInfo;
 
 import java.lang.ref.WeakReference;
 
@@ -16,6 +17,11 @@ public class IntentAction implements IAction {
     public IntentAction(Context context, Intent intent) {
         this.mContextRef = new WeakReference<>(context);
         this.mIntent = intent;
+    }
+
+    @Override
+    public boolean setNode(AccessibilityNodeInfo node) {
+        return false;
     }
 
     @Override

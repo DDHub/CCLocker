@@ -5,12 +5,13 @@ import android.view.accessibility.AccessibilityNodeInfo;
 /**
  * Created by denzelw on 16/8/10.
  */
-public class ScrollAction implements IAction, INodeHandler {
+public class ScrollAction implements IAction {
     protected AccessibilityNodeInfo mNode;
 
     @Override
-    public void setNode(AccessibilityNodeInfo node) {
+    public boolean setNode(AccessibilityNodeInfo node) {
         this.mNode = node;
+        return false;
     }
 
     @Override
