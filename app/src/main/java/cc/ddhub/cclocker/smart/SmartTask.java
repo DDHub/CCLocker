@@ -93,7 +93,7 @@ public class SmartTask {
             if (result instanceof NodeActionResult) {
                 mNode = ((NodeActionResult) result).getNode();
             }
-            mHandler.obtainMessage(0, result).sendToTarget();
+            mHandler.obtainMessage(0, new Result(mAction, result)).sendToTarget();
         }
     }
 
