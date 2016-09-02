@@ -135,9 +135,13 @@ public class AppListPresenter {
 
                 SmartTask task = new SmartTask();
                 task.addAction(new IntentAction(LockerApp.getApp(), intent));
-                task.addAction(new FindAction("强行停止").root());
                 task.addAction(new WaitingAction(2300));
+                task.addAction(new FindAction("强行停止").root());
                 task.addAction(new ClickAction());
+                task.addAction(new WaitingAction(1000));
+                task.addAction(new FindAction("确定").root());
+                task.addAction(new ClickAction());
+
                 final int size = task.actionSize();
                 task.setCallBack(new IActionCallBack() {
                     int count;
