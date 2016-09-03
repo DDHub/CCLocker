@@ -10,6 +10,7 @@ import java.util.List;
 
 import cc.ddhub.cclocker.LockerApp;
 import cc.ddhub.cclocker.app.AppLoader;
+import cc.ddhub.cclocker.smart.SmartHolder;
 import cc.ddhub.cclocker.smart.SmartTask;
 import cc.ddhub.cclocker.smart.action.ActionResult;
 import cc.ddhub.cclocker.smart.action.ClickAction;
@@ -17,7 +18,7 @@ import cc.ddhub.cclocker.smart.action.FindAction;
 import cc.ddhub.cclocker.smart.action.IAction;
 import cc.ddhub.cclocker.smart.action.IActionCallBack;
 import cc.ddhub.cclocker.smart.action.IntentAction;
-import cc.ddhub.cclocker.smart.action.WaitingAction;
+import cc.ddhub.cclocker.smart.action.WaitingWindowStateAction;
 import cc.ddhub.cclocker.util.L;
 
 /**
@@ -102,17 +103,7 @@ public class AppListPresenter {
     }
 
     public void onItemClick(int position, ItemInfo itemInfo) {
-//        if (itemInfo.getProcess() < 1) {
-        //do sth. else
-//        } else {
-        //for test now
-//        itemInfo.setProcess(itemInfo.getProcess() + 0.35f);
-//        if (itemInfo.getProcess() >= 1f) {
-//            itemInfo.setResult(random.nextBoolean());
-//        }
-//        mView.change(itemInfo);
-//        }
-        startAppSettingsPage(itemInfo);
+        startAppSettingsPage(mInfoList.get(position));
     }
 
     boolean b = false;
@@ -133,29 +124,32 @@ public class AppListPresenter {
                 intent.setData(Uri.parse("package:" + pkg));
                 intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 
-                SmartTask task = new SmartTask();
+                final SmartTask task = new SmartTask();
                 task.addAction(new IntentAction(LockerApp.getApp(), intent));
-                task.addAction(new WaitingAction(2300));
+                task.addAction(new WaitingWindowStateAction());
                 task.addAction(new FindAction("强行停止").root());
                 task.addAction(new ClickAction());
-                task.addAction(new WaitingAction(1000));
+                task.addAction(new WaitingWindowStateAction());
                 task.addAction(new FindAction("确定").root());
                 task.addAction(new ClickAction());
 
                 final int size = task.actionSize();
-                task.setCallBack(new IActionCallBack() {
+                task.setActionCallBack(new IActionCallBack() {
                     int count;
                     boolean isSucceed = true;
 
                     @Override
                     public boolean onPreExecute(IAction action) {
+                        if (task.nextAction() instanceof WaitingWindowStateAction) {
+                            ((WaitingWindowStateAction) task.nextAction()).startListening();
+                        }
                         L.d("wrw", "pre execute " + isSucceed + "  " + action.getClass().getSimpleName());
                         return isSucceed;
                     }
 
                     @Override
                     public void onExecuteDone(IAction action, ActionResult result) {
-                        L.d("wrw", "start app settings page " + isSucceed);
+                        L.d("wrw", "start app settings page " + isSucceed + " callback size " + SmartHolder.getInstance().getCallBackSize());
                         count++;
                         this.isSucceed = result.result();
                         itemInfo.setProcess(count * 1f / size);
@@ -169,6 +163,17 @@ public class AppListPresenter {
                     @Override
                     public void onExecuteCancel(IAction action) {
                         L.d("wrw", "action cancel " + action);
+                    }
+                });
+                task.setExecuteListener(new SmartTask.OnTaskExecuteListener() {
+                    @Override
+                    public void onTaskExecuteStart() {
+
+                    }
+
+                    @Override
+                    public void onTaskExecuteFinish() {
+
                     }
                 });
                 task.execute();

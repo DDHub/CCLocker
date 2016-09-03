@@ -22,6 +22,7 @@ public class SmartService extends AccessibilityService {
         if (event.getEventType() == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
             SmartHolder.getInstance().setRootNode(getRootInActiveWindow());
         }
+        SmartHolder.getInstance().onAccessibilityEvent(event.getEventType());
 
     }
 

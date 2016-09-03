@@ -1,16 +1,22 @@
 package cc.ddhub.cclocker.smart.action;
 
-import android.os.SystemClock;
 import android.view.accessibility.AccessibilityNodeInfo;
+
+import java.util.concurrent.BlockingDeque;
+import java.util.concurrent.LinkedBlockingDeque;
 
 /**
  * Created by denzelw on 16/8/10.
  */
 public class WaitingAction implements IAction {
-    private long mTime;
+    private BlockingDeque<Integer> mLock;
 
-    public WaitingAction(long time) {
-        this.mTime = time;
+    public WaitingAction() {
+        mLock = new LinkedBlockingDeque<>(1);
+    }
+
+    public void wakeUp() {
+        mLock.offer(0);
     }
 
     @Override
@@ -20,8 +26,14 @@ public class WaitingAction implements IAction {
 
     @Override
     public ActionResult execute() {
-        if (mTime > 0) {
-            SystemClock.sleep(mTime);
+        while (true) {
+            try {
+                mLock.take();
+                break;
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+                return new ActionResult(false);
+            }
         }
         return new ActionResult(true);
     }

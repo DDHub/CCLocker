@@ -24,19 +24,30 @@ public class SmartTask {
     private InternalHandler mHandler;
     private AccessibilityNodeInfo mNode;
     private Queue<IAction> mActionQueue;
+    private OnTaskExecuteListener mExecuteListener;
+
+    public interface OnTaskExecuteListener {
+        void onTaskExecuteStart();
+        void onTaskExecuteFinish();
+    }
 
     public SmartTask() {
         this.mActionQueue = new LinkedList<>();
         mHandler = new InternalHandler(this, Looper.myLooper());
     }
 
-    public SmartTask(IActionCallBack callBack) {
+    public SmartTask(IActionCallBack callBack, OnTaskExecuteListener taskExecuteListener) {
         this();
-        setCallBack(callBack);
+        setActionCallBack(callBack);
+        setExecuteListener(taskExecuteListener);
     }
 
-    public void setCallBack(IActionCallBack callBack) {
+    public void setActionCallBack(IActionCallBack callBack) {
         this.mCallBack = callBack;
+    }
+
+    public void setExecuteListener(OnTaskExecuteListener executeListener) {
+        this.mExecuteListener = executeListener;
     }
 
     public SmartTask addAction(IAction action) {
@@ -53,16 +64,28 @@ public class SmartTask {
     }
 
     public void execute() {
+        if (mExecuteListener != null) {
+            mExecuteListener.onTaskExecuteStart();
+            if (mActionQueue.isEmpty()) {
+                mExecuteListener.onTaskExecuteFinish();
+            }
+        }
         executeNext();
     }
 
-    private void executeNext() {
+    public IAction nextAction() {
+        return mActionQueue.peek();
+    }
+
+    private boolean executeNext() {
         if (mActionQueue != null) {
             IAction action = mActionQueue.poll();
             if (action != null) {
                 executeAction(action);
+                return true;
             }
         }
+        return false;
     }
 
     private void executeAction(IAction action) {
@@ -124,7 +147,9 @@ public class SmartTask {
                     Result result = (Result) o;
                     mTask.mCallBack.onExecuteDone(result.mAction, result.mActionResult);
                 }
-                mTask.executeNext();
+                if (!mTask.executeNext() && mTask.mExecuteListener != null) {
+                    mTask.mExecuteListener.onTaskExecuteFinish();
+                }
             }
         }
 
