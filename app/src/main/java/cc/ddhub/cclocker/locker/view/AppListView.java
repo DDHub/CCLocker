@@ -24,7 +24,7 @@ public class AppListView extends RecyclerView implements AppListPresenter.IView 
         @Override
         public void onItemClick(int position, View view, AppListPresenter.ItemInfo itemInfo) {
             if (mPresenter != null) {
-                mPresenter.onItemClick(position, itemInfo);
+                mPresenter.onItemClick(position);
             }
         }
     };

@@ -59,7 +59,7 @@ public class SmartTask {
         return mActionQueue;
     }
 
-    public int actionSize() {
+    public int actionCount() {
         return mActionQueue.size();
     }
 

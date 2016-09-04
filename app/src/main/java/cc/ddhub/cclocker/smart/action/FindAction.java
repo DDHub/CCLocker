@@ -12,30 +12,21 @@ import cc.ddhub.cclocker.smart.SmartHolder;
  */
 public class FindAction implements IAction {
     private String mText;
-    private AccessibilityNodeInfo mNode;
 
     public FindAction(String text) {
         this.mText = text;
     }
 
-    public FindAction root() {
-        setNode(SmartHolder.getInstance().getRootNode());
-        return this;
-    }
-
     @Override
     public boolean setNode(AccessibilityNodeInfo node) {
-        mNode = node;
-        return true;
+        return false;
     }
 
     @Override
     public NodeActionResult execute() {
+        AccessibilityNodeInfo mNode = SmartHolder.getInstance().getActiveRootNode();
         if (mNode == null) {
-            root();
-            if (mNode == null) {
-                return new NodeActionResult(false, null);
-            }
+            return new NodeActionResult(false, null);
         }
         if (TextUtils.isEmpty(mText)) {
             return new NodeActionResult(false, null);

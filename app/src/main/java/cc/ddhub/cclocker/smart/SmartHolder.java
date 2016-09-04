@@ -1,6 +1,8 @@
 package cc.ddhub.cclocker.smart;
 
+import android.accessibilityservice.AccessibilityService;
 import android.util.SparseArray;
+import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
 
 import java.util.ArrayList;
@@ -11,7 +13,8 @@ import java.util.List;
  */
 public class SmartHolder {
     private SparseArray<List<IAccessibilityEventCallBack>> mCallback;
-    private AccessibilityNodeInfo mRootNode;
+    private AccessibilityNodeInfo mActiveRootNode;
+    private SmartService mSmartService;
 
     private static SmartHolder sHolder = new SmartHolder();
 
@@ -21,6 +24,14 @@ public class SmartHolder {
 
     private SmartHolder() {
         mCallback = new SparseArray<>();
+    }
+
+    public void registerService(SmartService service) {
+        mSmartService = service;
+    }
+
+    public void unregisterService() {
+        mSmartService = null;
     }
 
     public void addCallBack(int type, IAccessibilityEventCallBack callBack) {
@@ -57,6 +68,9 @@ public class SmartHolder {
     }
 
     public void onAccessibilityEvent(int type) {
+        if (type == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
+            setCurrentNode(mSmartService.getRootInActiveWindow());
+        }
         List<IAccessibilityEventCallBack> list = mCallback.get(type);
         if (list != null) {
             for (IAccessibilityEventCallBack callBack : list) {
@@ -79,15 +93,22 @@ public class SmartHolder {
         return result;
     }
 
-    public void setRootNode(AccessibilityNodeInfo node) {
-        if (mRootNode != null && mRootNode != node) {
-            mRootNode.recycle();
+    private void setCurrentNode(AccessibilityNodeInfo node) {
+        if (mActiveRootNode != null && mActiveRootNode != node) {
+            mActiveRootNode.recycle();
         }
-        mRootNode = node;
+        mActiveRootNode = node;
     }
 
-    public AccessibilityNodeInfo getRootNode() {
-        return mRootNode;
+    public AccessibilityNodeInfo getActiveRootNode() {
+        return mActiveRootNode;
+    }
+
+    public boolean performBack() {
+        if (mSmartService != null) {
+            return mSmartService.performGlobalAction(AccessibilityService.GLOBAL_ACTION_BACK);
+        }
+        return false;
     }
 
 }

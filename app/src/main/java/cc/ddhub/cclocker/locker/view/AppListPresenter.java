@@ -6,13 +6,18 @@ import android.provider.Settings;
 import android.text.TextUtils;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import cc.ddhub.cclocker.LockerApp;
 import cc.ddhub.cclocker.app.AppLoader;
+import cc.ddhub.cclocker.smart.AccessibilityUtil;
 import cc.ddhub.cclocker.smart.SmartHolder;
+import cc.ddhub.cclocker.smart.SmartService;
 import cc.ddhub.cclocker.smart.SmartTask;
 import cc.ddhub.cclocker.smart.action.ActionResult;
+import cc.ddhub.cclocker.smart.action.BackAction;
 import cc.ddhub.cclocker.smart.action.ClickAction;
 import cc.ddhub.cclocker.smart.action.FindAction;
 import cc.ddhub.cclocker.smart.action.IAction;
@@ -27,6 +32,7 @@ import cc.ddhub.cclocker.util.L;
 public class AppListPresenter {
     private IView mView;
     private List<ItemInfo> mInfoList;
+    private Set<String> mIgnoredPkgs;
 
     public interface IView {
 
@@ -82,6 +88,8 @@ public class AppListPresenter {
         mView = view;
         view.attachPresenter(this);
         mInfoList = new ArrayList<>();
+        mIgnoredPkgs = new HashSet<>();
+        mIgnoredPkgs.add("cc.ddhub.cclocker");
     }
 
     public static AppListPresenter handle(IView view) {
@@ -102,83 +110,76 @@ public class AppListPresenter {
         mInfoList.addAll(itemList);
     }
 
-    public void onItemClick(int position, ItemInfo itemInfo) {
-        startAppSettingsPage(mInfoList.get(position));
+    public void onItemClick(int position) {
+        if (AccessibilityUtil.isAccessibilityOn(LockerApp.getApp(), SmartService.class)) {
+            startTask(mInfoList.get(position).getInfo().getPkg(), null);
+        } else {
+            requestAccessibility();
+        }
     }
 
-    boolean b = false;
+    private void requestAccessibility() {
+        Intent intent = new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        SmartTask task = new SmartTask();
+        task.addAction(new IntentAction(LockerApp.getApp(), intent));
+        task.execute();
+    }
 
-    private void startAppSettingsPage(final ItemInfo itemInfo) {
-        AppLoader.AppInfo appInfo = itemInfo.getInfo();
-        String pkg = appInfo.getPkg();
-        if (!TextUtils.isEmpty(pkg)) {
-            if (!b) {
-                Intent intent = new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS);
-                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                SmartTask task = new SmartTask();
-                task.addAction(new IntentAction(LockerApp.getApp(), intent));
-                task.execute();
-                b = true;
-            } else {
-                Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
-                intent.setData(Uri.parse("package:" + pkg));
-                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+    private boolean isIgnored(String pkg) {
+        return mIgnoredPkgs.contains(pkg);
+    }
 
-                final SmartTask task = new SmartTask();
-                task.addAction(new IntentAction(LockerApp.getApp(), intent));
-                task.addAction(new WaitingWindowStateAction());
-                task.addAction(new FindAction("强行停止").root());
-                task.addAction(new ClickAction());
-                task.addAction(new WaitingWindowStateAction());
-                task.addAction(new FindAction("确定").root());
-                task.addAction(new ClickAction());
-
-                final int size = task.actionSize();
-                task.setActionCallBack(new IActionCallBack() {
-                    int count;
-                    boolean isSucceed = true;
-
-                    @Override
-                    public boolean onPreExecute(IAction action) {
-                        if (task.nextAction() instanceof WaitingWindowStateAction) {
-                            ((WaitingWindowStateAction) task.nextAction()).startListening();
-                        }
-                        L.d("wrw", "pre execute " + isSucceed + "  " + action.getClass().getSimpleName());
-                        return isSucceed;
-                    }
-
-                    @Override
-                    public void onExecuteDone(IAction action, ActionResult result) {
-                        L.d("wrw", "start app settings page " + isSucceed + " callback size " + SmartHolder.getInstance().getCallBackSize());
-                        count++;
-                        this.isSucceed = result.result();
-                        itemInfo.setProcess(count * 1f / size);
-                        if (count == size || !isSucceed) {
-                            itemInfo.setResult(isSucceed);
-                            mView.change(itemInfo);
-                        }
-                        mView.change(itemInfo);
-                    }
-
-                    @Override
-                    public void onExecuteCancel(IAction action) {
-                        L.d("wrw", "action cancel " + action);
-                    }
-                });
-                task.setExecuteListener(new SmartTask.OnTaskExecuteListener() {
-                    @Override
-                    public void onTaskExecuteStart() {
-
-                    }
-
-                    @Override
-                    public void onTaskExecuteFinish() {
-
-                    }
-                });
-                task.execute();
+    private void startTask(String pkg, SmartTask.OnTaskExecuteListener listener) {
+        if (TextUtils.isEmpty(pkg)) {
+            if (listener != null) {
+                listener.onTaskExecuteStart();
+                listener.onTaskExecuteFinish();
             }
+            return;
         }
+        Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+        intent.setData(Uri.parse("package:" + pkg));
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+
+        final SmartTask task = new SmartTask();
+        task.addAction(new IntentAction(LockerApp.getApp(), intent));
+        task.addAction(new WaitingWindowStateAction());
+        task.addAction(new FindAction("强行停止"));
+        task.addAction(new ClickAction());
+        task.addAction(new WaitingWindowStateAction());
+        task.addAction(new FindAction("确定"));
+        task.addAction(new ClickAction());
+        task.addAction(new WaitingWindowStateAction());
+        task.addAction(new BackAction());
+
+        final int size = task.actionCount();
+        task.setActionCallBack(new IActionCallBack() {
+            int count;
+            boolean isSucceed = true;
+
+            @Override
+            public boolean onPreExecute(IAction action) {
+                if (task.nextAction() instanceof WaitingWindowStateAction) {
+                    ((WaitingWindowStateAction) task.nextAction()).startListening();
+                }
+                L.d("wrw", "pre execute " + isSucceed + "  " + action.getClass().getSimpleName());
+                return isSucceed;
+            }
+
+            @Override
+            public void onExecuteDone(IAction action, ActionResult result) {
+                L.d("wrw", "start app settings page " + isSucceed + " callback size " + SmartHolder.getInstance().getCallBackSize());
+                this.isSucceed = result.result();
+            }
+
+            @Override
+            public void onExecuteCancel(IAction action) {
+                L.d("wrw", "action cancel " + action);
+            }
+        });
+        task.setExecuteListener(listener);
+        task.execute();
     }
 
 }
